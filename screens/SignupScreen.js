@@ -20,6 +20,7 @@ export default function SignupScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("user");
+  const [permission, setPermission] = useState("rejected");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,6 +57,7 @@ export default function SignupScreen({ navigation }) {
           await setDoc(doc(db, "users", user.uid), {
             email: user.email,
             role: role,
+            permission: permission,
           });
         }
         setIsLoading(false);

@@ -115,6 +115,7 @@ export default function AdminScreen({ navigation }) {
                     <Text style={styles.bookText}>Book Title: {item.title}</Text>
                     <Text style={styles.bookText}>Author: {item.authorname}</Text>
                     <Text style={styles.bookText}>Publisher: {item.publisher}</Text>
+                    <Text style={styles.bookText}>Access Type: {item.accesstype}</Text>
                     <Text style={styles.bookText}>Published Year: {item.publishedyear}</Text>
                     <Text style={styles.bookText}>ID: {item.bookId}</Text>
                     <Text style={styles.bookText}>Price: {item.price}</Text>
@@ -151,18 +152,12 @@ export default function AdminScreen({ navigation }) {
         )}
         <View style={styles.footer}>
         <View></View>
-          {/* <TouchableOpacity
+          <TouchableOpacity
             style={styles.btnUserDetails}
             onPress={() => navigation.replace("UserDetails")}
           >
             <Text style={styles.btnText}>View User Details</Text>
-          </TouchableOpacity> */}
-          {/* <TouchableOpacity
-            style={styles.btnSignOut}
-            onPress={handleSignOut}
-          >
-            <Text style={styles.btnText}>Sign Out</Text>
-          </TouchableOpacity> */}
+          </TouchableOpacity> 
           <TouchableOpacity
           style={styles.addBtn}
           onPress={() => navigation.replace("AddProduct")}
@@ -175,6 +170,8 @@ export default function AdminScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -200,8 +197,15 @@ const styles = StyleSheet.create({
   },
   addBtn: {
     backgroundColor: "#4CAF50",
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   btnText: {
     color: "#ffffff",
@@ -262,19 +266,28 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly"
   },
   editBtn: {
-    backgroundColor: "#FFA500",
-    padding: 5,
-    paddingLeft:10,
-    paddingRight:10,
-    textAlign: "center",
-    borderRadius: 5,
+    backgroundColor: "#f39c12",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   deleteBtn: {
-    backgroundColor: "#FF0000",
-    paddingLeft:10,
-    padding: 5,
-    paddingRight:10,
-    borderRadius: 5,
+    backgroundColor: "#e74c3c",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#e74c3c",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   actionText: {
     color: "#ffffff",
@@ -290,12 +303,26 @@ const styles = StyleSheet.create({
   },
   btnUserDetails: {
     backgroundColor: "#4D9899",
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   btnSignOut: {
     backgroundColor: "#841584",
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
 });

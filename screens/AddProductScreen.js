@@ -26,6 +26,7 @@ export default function AddBookScreen({ navigation }) {
   const [title, setTitle] = useState('');
   const [authorname, setAuthorName] = useState('');
   const [publisher, setPublisher] = useState('');
+  const [accesstype, setAccesstype] = useState('');
   const [publishedyear, setPublishedYear] = useState('');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
@@ -59,7 +60,6 @@ export default function AddBookScreen({ navigation }) {
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsEditing: true,
-        aspect: [4, 3],
         quality: 1,
       });
 
@@ -72,6 +72,24 @@ export default function AddBookScreen({ navigation }) {
       console.error("Error selecting image:", error);
     }
   };
+
+  const takePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permission required', 'Permission to access camera is required!');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
 
   const uploadImageAsync = async (uri) => {
     setUploadingImage(true);
@@ -128,6 +146,11 @@ export default function AddBookScreen({ navigation }) {
       return;
     }
 
+    if (accesstype.toLocaleLowerCase() !== 'public' && accesstype.toLocaleLowerCase() !== 'private') {
+      setError('You should enter Access type as Public or Private');
+      return;
+    }
+    
     setError('');
     setLoading(true);
     setBackButtonEnabled(false);
@@ -142,6 +165,7 @@ export default function AddBookScreen({ navigation }) {
         title,
         authorname,
         publisher,
+        accesstype,
         publishedyear: publishedyear ? publishedyear : '- - -',
         discount: discount ? discount : '- - -',
         price: price ? price : '- - -',
@@ -154,6 +178,7 @@ export default function AddBookScreen({ navigation }) {
       setTitle('');
       setAuthorName('');
       setPublisher('');
+      setAccesstype('');
       setPublishedYear('');
       setPrice('');
       setDiscount('');
@@ -199,6 +224,12 @@ export default function AddBookScreen({ navigation }) {
           />
           <TextInput
             style={[styles.input, error ? styles.inputError : null]}
+            placeholder="Access type 'Public or Private'"
+            value={accesstype}
+            onChangeText={setAccesstype}
+          />
+          <TextInput
+            style={[styles.input, error ? styles.inputError : null]}
             placeholder="Published Year"
             value={publishedyear}
             onChangeText={setPublishedYear}
@@ -222,7 +253,11 @@ export default function AddBookScreen({ navigation }) {
             onChangeText={setDescription}
           />
           <TouchableOpacity style={styles.selectImageButton} onPress={handleSelectImage}>
-            <Text style={styles.selectImageText}>Select Image</Text>
+            <Text style={styles.selectImageText}>Select Book Image</Text>
+          </TouchableOpacity>
+          <Text>or</Text>
+          <TouchableOpacity style={styles.selectImageButton} onPress={takePhoto}>
+            <Text style={styles.selectImageText}>Take Photo of the book</Text>
           </TouchableOpacity>
           {imageUri && (
             <>

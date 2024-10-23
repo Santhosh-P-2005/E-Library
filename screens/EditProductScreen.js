@@ -28,6 +28,7 @@ export default function EditBookScreen({ route, navigation }) {
   const [title, setTitle] = useState('');
   const [authorname, setAuthorName] = useState('');
   const [publisher, setPublisher] = useState('');
+  const [accesstype, setAccesstype] = useState('');
   const [publishedyear, setPublishedYear] = useState('');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
@@ -52,6 +53,7 @@ export default function EditBookScreen({ route, navigation }) {
           setTitle(bookData.title);
           setAuthorName(bookData.authorname);
           setPublisher(bookData.publisher);
+          setAccesstype(bookData.accesstype);
           setPublishedYear(bookData.publishedyear);
           setImageUrl(bookData.imageUrl);
           setPrice(bookData.price);
@@ -104,6 +106,23 @@ export default function EditBookScreen({ route, navigation }) {
 
     } catch (error) {
       console.error("Error selecting image:", error);
+    }
+  };
+
+  const takePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permission required', 'Permission to access camera is required!');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
     }
   };
 
@@ -162,6 +181,11 @@ export default function EditBookScreen({ route, navigation }) {
       return;
     }
 
+    if (accesstype.toLocaleLowerCase() !== 'public' && accesstype.toLocaleLowerCase() !== 'private') {
+      setError('You should enter Access type as Public or Private');
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -171,6 +195,7 @@ export default function EditBookScreen({ route, navigation }) {
         title,
         authorname,
         publisher,
+        accesstype,
         price: price ? price : '- - -',
         discount: discount ? discount : '- - -',
         imageUrl,
@@ -215,6 +240,12 @@ export default function EditBookScreen({ route, navigation }) {
         />
         <TextInput
             style={[styles.input, error ? styles.inputError : null]}
+            placeholder="Access type 'Public or Private'"
+            value={accesstype}
+            onChangeText={setAccesstype}
+          />
+        <TextInput
+            style={[styles.input, error ? styles.inputError : null]}
             placeholder="Published Year"
             value={publishedyear}
             onChangeText={setPublishedYear}
@@ -245,6 +276,10 @@ export default function EditBookScreen({ route, navigation }) {
           />
         <TouchableOpacity style={styles.selectImageButton} onPress={handleSelectImage}>
           <Text style={styles.selectImageText}>Select Image</Text>
+        </TouchableOpacity>
+        <Text>or</Text>
+        <TouchableOpacity style={styles.selectImageButton} onPress={takePhoto}>
+          <Text style={styles.selectImageText}>Take Photo</Text>
         </TouchableOpacity>
         {imageUri && (
           <>

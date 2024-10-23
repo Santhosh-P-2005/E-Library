@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { auth, connectToDatabase } from "../firebase";
 import { signOut } from "firebase/auth";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 
 export default function UserScreen({ navigation }) {
   const db = connectToDatabase();
@@ -20,7 +20,26 @@ export default function UserScreen({ navigation }) {
   const [books, setBooks] = useState([]);
   const [error, setError] = useState("");
   const [selectedBookId, setSelectedBookId] = useState(null);
+  const [userPermissionStatus, setUserPermissionStatus] = useState(null);
+  const [loadingPermissionId, setLoadingPermissionId] = useState(null); // New state for permission request loading
 
+  // Fetch user's permission status from Firestore
+  const fetchUserPermissionStatus = async () => {
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setUserPermissionStatus(userData.permission || "none");
+      } else {
+        setUserPermissionStatus("none");
+      }
+    } catch (error) {
+      console.error("Error fetching user permission status:", error);
+    }
+  };
+
+  // Fetch books from Firestore
   const fetchBooks = async () => {
     setLoading(true);
     try {
@@ -40,8 +59,10 @@ export default function UserScreen({ navigation }) {
 
   useEffect(() => {
     fetchBooks();
+    fetchUserPermissionStatus(); // Fetch user permission status when the screen loads
   }, []);
 
+  // Handle sign out
   const handleSignOut = () => {
     setLoading(true);
     signOut(auth)
@@ -55,6 +76,26 @@ export default function UserScreen({ navigation }) {
       });
   };
 
+  // Handle permission request for private books
+  const handlePermissionRequest = async (bookId) => {
+    setLoadingPermissionId(bookId); // Start loading for the specific book
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userDocRef, {
+        permission: "pending", // Mark permission as pending
+        requestedBookId: bookId, // Store the ID of the book being requested
+      });
+      Alert.alert("Permission Request Sent", "Your request is now pending.");
+      setUserPermissionStatus("pending"); // Update local state
+    } catch (error) {
+      console.error("Error requesting permission:", error);
+      Alert.alert("Error", "Could not send the permission request.");
+    } finally {
+      setLoadingPermissionId(null); // Reset loading state
+    }
+  };
+
+  // Handle book image press to toggle details view
   const handleImagePress = (bookId) => {
     setSelectedBookId((prevSelectedBookId) =>
       prevSelectedBookId === bookId ? null : bookId
@@ -65,14 +106,11 @@ export default function UserScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Books</Text>
-        
-        <TouchableOpacity
-            style={styles.btnSignOut}
-            onPress={handleSignOut}
-          >
-            <Text style={styles.btnText}>Sign Out</Text>
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.btnSignOut} onPress={handleSignOut}>
+          <Text style={styles.btnText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
+
       <View style={styles.content}>
         {loading && (
           <View style={styles.loadingContainer}>
@@ -80,6 +118,7 @@ export default function UserScreen({ navigation }) {
             <ActivityIndicator size="large" color="#0000ff" />
           </View>
         )}
+
         {error ? (
           <Text style={styles.errorText}>{error}</Text>
         ) : (
@@ -88,28 +127,111 @@ export default function UserScreen({ navigation }) {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <View style={styles.bookItem}>
-                  <Text style={styles.bookTitle}>{item.title}</Text>
+                <Text style={styles.bookTitle}>{item.title}</Text>
                 <TouchableOpacity onPress={() => handleImagePress(item.id)}>
                   <Image
                     source={{ uri: item.imageUrl }}
                     style={styles.bookImage}
                   />
                 </TouchableOpacity>
-                {selectedBookId === item.id && (
-                  <>
-                    <Text style={styles.bookText}>Book Title: {item.title}</Text>
-                    <Text style={styles.bookText}>Author: {item.authorname}</Text>
-                    <Text style={styles.bookText}>Publisher: {item.publisher}</Text>
-                    <Text style={styles.bookText}>Published Year: {item.publishedyear}</Text>
-                    <Text style={styles.bookText}>ID: {item.bookId}</Text>
-                    <Text style={styles.bookText}>Price: {item.price}</Text>
-                    <Text style={styles.bookText}>Discount: {item.discount}</Text>
-                    <Text style={styles.bookText}>Description: {item.description}</Text>
-                    {item.barcode && (
-                      <Text style={styles.bookText}>Barcode: {item.barcode}</Text>
-                    )}
-                  </>
-                )}
+
+                {selectedBookId === item.id ? (
+                  item.accesstype === "Public" ? (
+                    <>
+                      <Text style={styles.bookText}>
+                        Book Title: {item.title}
+                      </Text>
+                      <Text style={styles.bookText}>
+                        Author: {item.authorname}
+                      </Text>
+                      <Text style={styles.bookText}>
+                        Publisher: {item.publisher}
+                      </Text>
+                      <Text style={styles.bookText}>
+                        Published Year: {item.publishedyear}
+                      </Text>
+                      <Text style={styles.bookText}>ID: {item.bookId}</Text>
+                      <Text style={styles.bookText}>
+                        Price: {item.price}
+                      </Text>
+                      <Text style={styles.bookText}>
+                        Discount: {item.discount}
+                      </Text>
+                      <Text style={styles.bookText}>
+                        Description: {item.description}
+                      </Text>
+                      {item.barcode && (
+                        <Text style={styles.bookText}>
+                          Barcode: {item.barcode}
+                        </Text>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {userPermissionStatus === "granted" ? (
+                        <>
+                          <Text>Permission Status: {userPermissionStatus}</Text>
+                          <Text style={styles.bookText}>
+                            Book Title: {item.title}
+                          </Text>
+                          <Text style={styles.bookText}>
+                            Author: {item.authorname}
+                          </Text>
+                          <Text style={styles.bookText}>
+                            Publisher: {item.publisher}
+                          </Text>
+                          <Text style={styles.bookText}>
+                            Published Year: {item.publishedyear}
+                          </Text>
+                          <Text style={styles.bookText}>ID: {item.bookId}</Text>
+                          <Text style={styles.bookText}>
+                            Price: {item.price}
+                          </Text>
+                          <Text style={styles.bookText}>
+                            Discount: {item.discount}
+                          </Text>
+                          <Text style={styles.bookText}>
+                            Description: {item.description}
+                          </Text>
+                          {item.barcode && (
+                            <Text style={styles.bookText}>
+                              Barcode: {item.barcode}
+                            </Text>
+                          )}
+                        </>
+                      ) : (
+                        userPermissionStatus === "pending" ? (
+                        <>
+                        <Text>
+                          This is private; you need permission to see this
+                          content.
+                        </Text>
+                        <Text>Permission Status: {userPermissionStatus}</Text>
+                        </> 
+                        ):( 
+                          <>
+                            <Text>
+                              This is private; you need permission to see this
+                              content.
+                            </Text>
+                            <Text>Permission Status: {userPermissionStatus}</Text>
+                            <TouchableOpacity
+                              style={styles.btnPermission}
+                              onPress={() => handlePermissionRequest(item.id)}
+                              disabled={loadingPermissionId === item.id} // Disable button when loading
+                            >
+                              {loadingPermissionId === item.id ? ( // Show activity indicator if loading
+                                <ActivityIndicator size="small" color="#ffffff" />
+                              ) : (
+                                <Text style={styles.btnText}>Request Permission</Text>
+                              )}
+                            </TouchableOpacity>
+                          </>
+                        )
+                      )}
+                    </>
+                  )
+                ) : null}
               </View>
             )}
             contentContainerStyle={styles.listContainer}
@@ -153,56 +275,63 @@ const styles = StyleSheet.create({
     color: "#0000ff",
   },
   btnSignOut: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
     backgroundColor: "#841584",
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   btnText: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "bold",
-  },
-  bookItem: {
-    backgroundColor: "#ffffff",
-    borderRadius: 5,
-    padding: 15,
-    marginVertical: 10,
-    borderColor: "gray",
-    borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  bookText: {
-    fontSize: 18,
-    marginBottom: 5,
-  },
-  bookTitle: {
-    fontSize: 18,
-    marginBottom: 10,
-    textAlign: 'center',
-    fontWeight: 'bold', 
-  },
-  bookImage: {
-    width: "100%",
-    height: 200,
-    borderRadius: 5,
-    marginBottom: 10,
+    fontWeight:'700',
+    textAlign:'center',
   },
   errorText: {
     color: "red",
     textAlign: "center",
+  },
+  bookItem: {
+    marginVertical: 10,
+    padding: 15,
+    borderRadius: 8,
+    backgroundColor: "#ffffff",
+    elevation: 1,
+  },
+  bookText: {
     fontSize: 16,
   },
+  bookTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  bookImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  btnPermission: {
+    backgroundColor: "#007bff",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    width: "95%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
   listContainer: {
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
 });

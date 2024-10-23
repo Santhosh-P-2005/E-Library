@@ -38,49 +38,107 @@ export default function UserDetailsScreen({ navigation }) {
   }, []);
 
   const updateUserRole = async (userId, newRole) => {
-    setLoadingStates((prevState) => ({ ...prevState, [userId]: true }));
+    setLoadingStates((prevState) => ({ ...prevState, [`${userId}_role`]: true }));
     try {
       await updateDoc(doc(db, "users", userId), { role: newRole });
       Alert.alert("Success", `User role updated to ${newRole}.`);
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const usersList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setUsers(usersList);
+      refreshUsers();
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
-      setLoadingStates((prevState) => ({ ...prevState, [userId]: false }));
+      setLoadingStates((prevState) => ({ ...prevState, [`${userId}_role`]: false }));
+    }
+  };
+
+  const handleGrantPermission = async (userId) => {
+    setLoadingStates((prevState) => ({ ...prevState, [`${userId}_grant`]: true }));
+    try {
+      await updateDoc(doc(db, "users", userId), { permission: "granted" });
+      Alert.alert("Success", "Permission granted");
+      refreshUsers();
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setLoadingStates((prevState) => ({ ...prevState, [`${userId}_grant`]: false }));
+    }
+  };
+
+  const handleRemovePermission = async (userId) => {
+    setLoadingStates((prevState) => ({ ...prevState, [`${userId}_remove`]: true }));
+    try {
+      await updateDoc(doc(db, "users", userId), { permission: "rejected" });
+      Alert.alert("Success", "Permission removed or rejected");
+      refreshUsers();
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setLoadingStates((prevState) => ({ ...prevState, [`${userId}_remove`]: false }));
     }
   };
 
   const handleRemoveUser = async (userId) => {
-    setLoadingStates((prevState) => ({ ...prevState, [userId]: true }));
+    setLoadingStates((prevState) => ({ ...prevState, [`${userId}_delete`]: true }));
     try {
       await deleteDoc(doc(db, "users", userId));
       setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-      Alert.alert("Success", "User removed successfully.");
+      Alert.alert("Success", "User removed");
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
-      setLoadingStates((prevState) => ({ ...prevState, [userId]: false }));
+      setLoadingStates((prevState) => ({ ...prevState, [`${userId}_delete`]: false }));
     }
+  };
+
+  const refreshUsers = async () => {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    const usersList = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setUsers(usersList);
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
-      <Text style={styles.itemText}>{item.email} - {item.role}</Text>
+      <Text style={styles.itemText}>Mail - {item.email}</Text>
+      <Text style={styles.itemText}>Role - {item.role}</Text>
+      <Text style={styles.itemText}>Permission - {item.permission}</Text>
+        {item.permission === "pending" && (
+          <View style={styles.buttonContainer}>
+          <Text style={styles.itemText1}>Permission Requested : </Text>
+          <TouchableOpacity
+            style={styles.grantPermissionButton}
+            onPress={() => handleGrantPermission(item.id)}
+            disabled={loadingStates[`${item.id}_grant`]}
+          >
+            {loadingStates[`${item.id}_grant`] ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Grant</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.removePermissionButton}
+            onPress={() => handleRemovePermission(item.id)}
+            disabled={loadingStates[`${item.id}_remove`]}
+          >
+            {loadingStates[`${item.id}_remove`] ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Reject</Text>
+            )}
+          </TouchableOpacity>
+          </View>
+        )}
       <View style={styles.buttonsContainer}>
         {item.role !== "admin" && (
           <TouchableOpacity
             style={styles.makeAdminButton}
             onPress={() => updateUserRole(item.id, "admin")}
-            disabled={loadingStates[item.id]}
+            disabled={loadingStates[`${item.id}_role`]}
           >
-            {loadingStates[item.id] ? (
-              <Text style={styles.loadingbuttonText}>Please wait...
-            <ActivityIndicator color="white" /></Text>
+            {loadingStates[`${item.id}_role`] ? (
+              <ActivityIndicator color="white" />
             ) : (
               <Text style={styles.buttonText}>Make Admin</Text>
             )}
@@ -90,24 +148,35 @@ export default function UserDetailsScreen({ navigation }) {
           <TouchableOpacity
             style={styles.makeUserButton}
             onPress={() => updateUserRole(item.id, "user")}
-            disabled={loadingStates[item.id]}
+            disabled={loadingStates[`${item.id}_role`]}
           >
-            {loadingStates[item.id] ? (
-            <Text style={styles.loadingbuttonText}>Please wait...
-            <ActivityIndicator color="white" /></Text>
+            {loadingStates[`${item.id}_role`] ? (
+              <ActivityIndicator color="white" />
             ) : (
               <Text style={styles.buttonText}>Make User</Text>
+            )}
+          </TouchableOpacity>
+        )}
+        {item.permission === "granted" && (
+          <TouchableOpacity
+            style={styles.removePermissionButton1}
+            onPress={() => handleRemovePermission(item.id)}
+            disabled={loadingStates[`${item.id}_remove`]}
+          >
+            {loadingStates[`${item.id}_remove`] ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.buttonText}>Remove Permission</Text>
             )}
           </TouchableOpacity>
         )}
         <TouchableOpacity
           style={styles.removeButton}
           onPress={() => handleRemoveUser(item.id)}
-          disabled={loadingStates[item.id]}
+          disabled={loadingStates[`${item.id}_delete`]}
         >
-          {loadingStates[item.id] ? (
-            <Text style={styles.loadingbuttonText}>Please wait...
-            <ActivityIndicator color="white" /></Text>
+          {loadingStates[`${item.id}_delete`] ? (
+            <ActivityIndicator color="white" />
           ) : (
             <Text style={styles.removeButtonText}>Remove</Text>
           )}
@@ -143,6 +212,7 @@ export default function UserDetailsScreen({ navigation }) {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -151,7 +221,7 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 40,
-    backgroundColor: "#6200ee",
+    backgroundColor: "#3e2723",
     alignItems: "center",
   },
   title: {
@@ -209,19 +279,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 10,
   },
+  itemText1: {
+    fontSize: 16,
+    marginBottom: 10,
+    marginTop: 5,
+  },
   buttonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
   },
   makeAdminButton: {
     backgroundColor: "#6200ee",
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "30%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   makeUserButton: {
     backgroundColor: "#03dac5",
-    padding: 10,
-    borderRadius: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "30%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   buttonText: {
     color: "#ffffff",
@@ -232,13 +325,58 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     backgroundColor: "red",
-    padding: 10,
-    borderRadius: 5,
-    marginLeft: 5,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "23%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
   removeButtonText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "bold",
   },
+  grantPermissionButton: {
+    backgroundColor: "#4caf50",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "20%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    marginLeft:10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  removePermissionButton: {
+    backgroundColor: "red",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginLeft:10,
+    width: "20%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  removePermissionButton1: {
+    backgroundColor: "red",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "43%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
 });
+;

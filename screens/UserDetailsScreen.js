@@ -8,15 +8,21 @@ import {
   ActivityIndicator,
   FlatList,
   Alert,
+  Modal,
+  Button,
 } from "react-native";
 import { connectToDatabase } from "../firebase";
 import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { Picker } from "@react-native-picker/picker"; // Import the Picker
 
 export default function UserDetailsScreen({ navigation }) {
   const db = connectToDatabase();
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [loadingStates, setLoadingStates] = useState({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDays, setSelectedDays] = useState("1 day");
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -50,18 +56,42 @@ export default function UserDetailsScreen({ navigation }) {
     }
   };
 
+
   const handleGrantPermission = async (userId) => {
-    setLoadingStates((prevState) => ({ ...prevState, [`${userId}_grant`]: true }));
+    setSelectedUserId(userId);
+    setModalVisible(true);
+  };
+
+  const grantPermission = async (userId) => {
+    const days = selectedDays === "1 min" ? 0.000694 : parseInt(selectedDays.split(' ')[0]);
+    const durationInMs = days * 24 * 60 * 60 * 1000;
+    const expirationTime = new Date(Date.now() + durationInMs); // Calculate expiration time
+
+    setLoadingStates((prevState) => ({ ...prevState, [`${selectedUserId}_grant`]: true }));
     try {
-      await updateDoc(doc(db, "users", userId), { permission: "granted" });
-      Alert.alert("Success", "Permission granted");
-      refreshUsers();
+      // Update the user's permission and expiration time in Firestore
+      await updateDoc(doc(db, "users", selectedUserId), { permission: "granted", expiration: expirationTime });
+      Alert.alert("Success", `Permission granted for ${days} day(s)`);
+
+      // Set a timeout to revoke permission after the specified duration
+      setTimeout(async () => {
+        try {
+          await updateDoc(doc(db, "users", selectedUserId), { permission: "rejected" });
+          refreshUsers();
+        } catch (error) {
+          Alert.alert("Error", error.message);
+        }
+      }, durationInMs); // Schedule the permission revocation
+
+      refreshUsers(); // Refresh the user list
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
-      setLoadingStates((prevState) => ({ ...prevState, [`${userId}_grant`]: false }));
+      setLoadingStates((prevState) => ({ ...prevState, [`${selectedUserId}_grant`]: false }));
+      setModalVisible(false); // Close the modal
     }
-  };
+};
+
 
   const handleRemovePermission = async (userId) => {
     setLoadingStates((prevState) => ({ ...prevState, [`${userId}_remove`]: true }));
@@ -107,7 +137,7 @@ export default function UserDetailsScreen({ navigation }) {
           <View style={styles.buttonContainer}>
           <Text style={styles.itemText1}>Permission Requested : </Text>
           <TouchableOpacity
-            style={styles.grantPermissionButton}
+            style={styles.grantButton}
             onPress={() => handleGrantPermission(item.id)}
             disabled={loadingStates[`${item.id}_grant`]}
           >
@@ -205,6 +235,41 @@ export default function UserDetailsScreen({ navigation }) {
           />
         )}
       </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Select Duration:</Text>
+          <Picker
+            selectedValue={selectedDays}
+            style={styles.picker}
+            onValueChange={(itemValue) => setSelectedDays(itemValue)}
+          >
+            <Picker.Item label="1 min" value="1 min" />
+            <Picker.Item label="1 day" value="1 day" />
+            <Picker.Item label="5 days" value="5 days" />
+            <Picker.Item label="10 days" value="10 days" />
+            <Picker.Item label="20 days" value="20 days" />
+            <Picker.Item label="30 days" value="30 days" />
+            <Picker.Item label="50 days" value="50 days" />
+          </Picker>
+          <TouchableOpacity
+            style={styles.grantPermissionButton}
+            onPress={grantPermission}
+          >
+              <Text style={styles.buttonText}>Grant Permission</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => setModalVisible(false)}
+          >
+              <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
       <TouchableOpacity onPress={() => navigation.replace('admin')} style={styles.backButton}>
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
@@ -340,7 +405,32 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
-  grantPermissionButton: {
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 18,
+  },
+  picker: {
+    height: 50,
+    width: 200,
+    marginBottom: 15,
+  },
+  grantButton: {
     backgroundColor: "#4caf50",
     paddingVertical: 10,
     borderRadius: 8,
@@ -348,6 +438,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     shadowColor: "#f39c12",
     marginLeft:10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  grantPermissionButton: {
+    backgroundColor: "#4caf50",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "40%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    marginLeft:10,
+    marginBottom:10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  cancelButton: {
+    backgroundColor: "red",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginLeft:10,
+    width: "25%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

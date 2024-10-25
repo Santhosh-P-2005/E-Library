@@ -39,7 +39,6 @@ export default function UserScreen({ navigation }) {
     }
   };
 
-  // Fetch books from Firestore
   const fetchBooks = async () => {
     setLoading(true);
     try {
@@ -59,7 +58,13 @@ export default function UserScreen({ navigation }) {
 
   useEffect(() => {
     fetchBooks();
-    fetchUserPermissionStatus(); // Fetch user permission status when the screen loads
+    fetchUserPermissionStatus();
+
+    const intervalId = setInterval(() => {
+      fetchUserPermissionStatus();
+    },1000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   // Handle sign out

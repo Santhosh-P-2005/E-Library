@@ -57,23 +57,46 @@ export default function AdminScreen({ navigation }) {
   };
 
   const handleDeleteBook = async (id, imageUrl) => {
-    setDeletingBookId(id);
-    try {
-      if (imageUrl) {
-        const imageRef = ref(storage, imageUrl);
-        await deleteObject(imageRef);
-      }
-
-      await deleteDoc(doc(db, "books", id));
-
-      Alert.alert("Success", "Book deleted successfully");
-      fetchBooks();
-    } catch (error) {
-      Alert.alert("Error", "Failed to delete book.");
-    } finally {
-      setDeletingBookId(null);
-    }
+    Alert.alert(
+      "Delete Book",
+      "Are you sure you want to delete this book?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            setDeletingBookId(id);
+            try {
+              // Delete the book image from storage if it exists
+              if (imageUrl) {
+                const imageRef = ref(storage, imageUrl);
+                console.log(imageRef);
+                await deleteObject(imageRef);
+              }
+  
+              // Delete the book document from Firestore
+              await deleteDoc(doc(db, "books", id));
+              
+  
+              // Update the books state by filtering out the deleted book
+              setBooks((prevBooks) => prevBooks.filter((book) => book.id !== id));
+  
+              Alert.alert("Success", "Book deleted successfully");
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete book.");
+            } finally {
+              setDeletingBookId(null);
+            }
+          }
+        }
+      ],
+      { cancelable: true }
+    );
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>

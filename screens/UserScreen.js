@@ -9,7 +9,9 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";69
 import { auth, connectToDatabase } from "../firebase";
 import { signOut } from "firebase/auth";
 import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
@@ -19,9 +21,13 @@ export default function UserScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [books, setBooks] = useState([]);
   const [error, setError] = useState("");
+  const [id, setId] = useState(null);
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [userPermissionStatus, setUserPermissionStatus] = useState(null);
+  const [permissionDurationStatus, setPermissionDurationStatus] = useState(null);
   const [loadingPermissionId, setLoadingPermissionId] = useState(null); // New state for permission request loading
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDays, setSelectedDays] = useState("1 day");
 
   // Fetch user's permission status from Firestore
   const fetchUserPermissionStatus = async () => {
@@ -31,6 +37,7 @@ export default function UserScreen({ navigation }) {
       if (userDoc.exists()) {
         const userData = userDoc.data();
         setUserPermissionStatus(userData.permission || "none");
+        setPermissionDurationStatus(userData.permissionduration);
       } else {
         setUserPermissionStatus("none");
       }
@@ -81,17 +88,23 @@ export default function UserScreen({ navigation }) {
       });
   };
 
+  const handleRequest = async (Id) => {
+    setId(Id);
+    setModalVisible(true);
+  };
   // Handle permission request for private books
-  const handlePermissionRequest = async (bookId) => {
-    setLoadingPermissionId(bookId); // Start loading for the specific book
+  const handlePermissionRequest = async () => {
+    setLoadingPermissionId(id); // Start loading for the specific book
     try {
       const userDocRef = doc(db, "users", auth.currentUser.uid);
       await updateDoc(userDocRef, {
         permission: "pending", // Mark permission as pending
-        requestedBookId: bookId, // Store the ID of the book being requested
+        permissionduration: selectedDays, // Mark permission as pending
+        requestedBookId: id, // Store the ID of the book being requested
       });
       Alert.alert("Permission Request Sent", "Your request is now pending.");
       setUserPermissionStatus("pending"); // Update local state
+      setModalVisible(false);
     } catch (error) {
       console.error("Error requesting permission:", error);
       Alert.alert("Error", "Could not send the permission request.");
@@ -176,6 +189,7 @@ export default function UserScreen({ navigation }) {
                       {userPermissionStatus === "granted" ? (
                         <>
                           <Text>Permission Status: {userPermissionStatus}</Text>
+                          <Text>Permission Granted for {permissionDurationStatus}.</Text>
                           <Text style={styles.bookText}>
                             Book Title: {item.title}
                           </Text>
@@ -222,7 +236,7 @@ export default function UserScreen({ navigation }) {
                             <Text>Permission Status: {userPermissionStatus}</Text>
                             <TouchableOpacity
                               style={styles.btnPermission}
-                              onPress={() => handlePermissionRequest(item.id)}
+                              onPress={() => handleRequest(item.id)}
                               disabled={loadingPermissionId === item.id} // Disable button when loading
                             >
                               {loadingPermissionId === item.id ? ( // Show activity indicator if loading
@@ -243,6 +257,42 @@ export default function UserScreen({ navigation }) {
           />
         )}
       </View>
+      
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalView}>
+          <Text style={styles.modalText}>Select Duration:</Text>
+          <Picker
+            selectedValue={selectedDays}
+            style={styles.picker}
+            onValueChange={(itemValue) => setSelectedDays(itemValue)}
+          >
+            <Picker.Item label="1 min" value="1 min" />
+            <Picker.Item label="1 day" value="1 day" />
+            <Picker.Item label="5 days" value="5 days" />
+            <Picker.Item label="10 days" value="10 days" />
+            <Picker.Item label="20 days" value="20 days" />
+            <Picker.Item label="30 days" value="30 days" />
+            <Picker.Item label="50 days" value="50 days" />
+          </Picker>
+          <TouchableOpacity
+            style={styles.grantPermissionButton}
+            onPress={handlePermissionRequest}
+          >
+              <Text style={styles.buttonText}>Request Permission</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => setModalVisible(false)}
+          >
+              <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -338,5 +388,70 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingBottom: 20,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 18,
+  },
+  picker: {
+    height: 50,
+    width: 200,
+    marginBottom: 15,
+  },
+  grantButton: {
+    backgroundColor: "#4caf50",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "20%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    marginLeft:10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  grantPermissionButton: {
+    backgroundColor: "#4caf50",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "40%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    marginLeft:10,
+    marginBottom:10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  cancelButton: {
+    backgroundColor: "red",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginLeft:10,
+    width: "25%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
   },
 });

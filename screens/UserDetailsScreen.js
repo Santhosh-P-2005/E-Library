@@ -12,7 +12,7 @@ import {
   Button,
 } from "react-native";
 import { connectToDatabase } from "../firebase";
-import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc, setDoc } from "firebase/firestore";
 import { Picker } from "@react-native-picker/picker"; // Import the Picker
 
 export default function UserDetailsScreen({ navigation }) {
@@ -70,8 +70,14 @@ export default function UserDetailsScreen({ navigation }) {
     setLoadingStates((prevState) => ({ ...prevState, [`${selectedUserId}_grant`]: true }));
     try {
       // Update the user's permission and expiration time in Firestore
-      await updateDoc(doc(db, "users", selectedUserId), { permission: "granted", expiration: expirationTime });
-      Alert.alert("Success", `Permission granted for ${days} day(s)`);
+      await updateDoc(doc(db, "users", selectedUserId), { permission: "granted", expiration: expirationTime, permissionduration: selectedDays });
+      await setDoc(doc(db, "history", `${userId}_${Date.now()}`), {
+        user: selectedUserId,
+        permission: "granted",
+        expiration: expirationTime,
+        permissionduration: selectedDays,
+      });
+       Alert.alert("Success", `Permission granted for ${days} day(s)`);
 
       // Set a timeout to revoke permission after the specified duration
       setTimeout(async () => {
@@ -134,6 +140,7 @@ export default function UserDetailsScreen({ navigation }) {
       <Text style={styles.itemText}>Role - {item.role}</Text>
       <Text style={styles.itemText}>Permission - {item.permission}</Text>
         {item.permission === "pending" && (
+          <View>
           <View style={styles.buttonContainer}>
           <Text style={styles.itemText1}>Permission Requested : </Text>
           <TouchableOpacity
@@ -158,6 +165,8 @@ export default function UserDetailsScreen({ navigation }) {
               <Text style={styles.buttonText}>Reject</Text>
             )}
           </TouchableOpacity>
+          </View>
+          <Text style={styles.itemText}>Requested the Permission for {item.permissionduration}.</Text>
           </View>
         )}
       <View style={styles.buttonsContainer}>

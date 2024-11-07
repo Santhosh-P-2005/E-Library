@@ -10,8 +10,8 @@ const firebaseConfig = {
     projectId: "login-a27b2",
     storageBucket: "login-a27b2.appspot.com",
     messagingSenderId: "766627127585",
-    appId: "1:766627127585:web:05234cfb70fe049a9fde60",
-    measurementId: "G-8D3KYEVNSN"
+    appId: "1:766627124585:web:052f4cfb70fe049a9fde60",
+    measurementId: "G-8D3LYEVNSN"
 };
 
 const app = initializeApp(firebaseConfig);

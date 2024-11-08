@@ -279,9 +279,14 @@ export default function UserDetailsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </Modal>
-      <TouchableOpacity onPress={() => navigation.replace('admin')} style={styles.backButton}>
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
+      <View style={styles.Buttoncontainer}>
+        <TouchableOpacity onPress={() => navigation.replace('admin')} style={styles.backButton}>
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.replace('History')} style={styles.historyButton}>
+          <Text style={styles.backButtonText}>View Permissions History</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -306,10 +311,24 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  Buttoncontainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingRight: '7%',
+    paddingLeft: '7%',
+    paddingBottom: '3%',
+  },
   backButton: {
     alignSelf: 'center',
     padding: 10,
     backgroundColor: '#4D9899',
+    borderRadius: 5,
+    margin: 10,
+  },
+  historyButton: {
+    alignSelf: 'center',
+    padding: 10,
+    backgroundColor: '#3D5300',
     borderRadius: 5,
     margin: 10,
   },

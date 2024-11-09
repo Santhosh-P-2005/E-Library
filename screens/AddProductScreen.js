@@ -40,6 +40,7 @@ export default function AddBookScreen({ navigation }) {
   const [scanned, setScanned] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [text, setText] = useState('Not yet scanned');
+  const [status, setStatus] = useState('Available');
 
   const askForCameraPermission = async () => {
     const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -169,6 +170,7 @@ export default function AddBookScreen({ navigation }) {
         publishedyear: publishedyear ? publishedyear : '- - -',
         discount: discount ? discount : '- - -',
         price: price ? price : '- - -',
+        status,
         description: description ? description : '- - -',
         imageUrl,
         barcode: barcode ? barcode : '- - -'
@@ -181,6 +183,7 @@ export default function AddBookScreen({ navigation }) {
       setAccesstype('');
       setPublishedYear('');
       setPrice('');
+      setStatus('');
       setDiscount('');
       setImageUri('');
       setImageUrl('');

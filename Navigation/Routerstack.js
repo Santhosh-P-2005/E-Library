@@ -13,6 +13,7 @@ import AddProductScreen from '../screens/AddProductScreen';
 import SplashScreen from '../screens/SplashScreen';
 import EditProductScreen from '../screens/EditProductScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import BookAllotmentScreen from '../screens/BookAllotmentScreen';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -87,6 +88,7 @@ const RouteStack = () => {
               <Stack.Screen name="admin" component={BottomTabAdmin} />
               <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
               <Stack.Screen name="History" component={HistoryScreen} />
+              <Stack.Screen name="Allotment" component={BookAllotmentScreen} />
               <Stack.Screen name="AddProduct" component={AddProductScreen} />
               <Stack.Screen name="EditProduct" component={EditProductScreen} />
             </>

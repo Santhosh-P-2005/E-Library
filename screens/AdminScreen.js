@@ -116,6 +116,12 @@ export default function AdminScreen({ navigation }) {
           </TouchableOpacity>
       </View>
       <View style={styles.content}>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => navigation.replace("AddProduct")}
+          >
+          <Text style={styles.btnText}>+ Add Book</Text>
+        </TouchableOpacity>
         {loading && (
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>Loading Book Details...</Text>
@@ -141,6 +147,7 @@ export default function AdminScreen({ navigation }) {
                     <Text style={styles.bookText}>Access Type: {item.accesstype}</Text>
                     <Text style={styles.bookText}>Published Year: {item.publishedyear}</Text>
                     <Text style={styles.bookText}>ID: {item.bookId}</Text>
+                    <Text style={styles.bookText}>Status: {item.status}</Text>
                     <Text style={styles.bookText}>Price: {item.price}</Text>
                     <Text style={styles.bookText}>Discount: {item.discount}</Text>
                     <Text style={styles.bookText}>Description: {item.description}</Text>
@@ -179,13 +186,13 @@ export default function AdminScreen({ navigation }) {
             style={styles.btnUserDetails}
             onPress={() => navigation.replace("UserDetails")}
           >
-            <Text style={styles.btnText}>View User Details</Text>
+          <Text style={styles.btnText}>View User Details</Text>
           </TouchableOpacity> 
-          <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => navigation.replace("AddProduct")}
-        >
-          <Text style={styles.btnText}>+ Add Book</Text>
+        <TouchableOpacity
+          style={styles.allotmentBtn}
+          onPress={() => navigation.replace("Allotment")}
+          >
+          <Text style={styles.btnText}>Allotment Details</Text>
         </TouchableOpacity>
         </View>
 
@@ -221,6 +228,7 @@ const styles = StyleSheet.create({
   addBtn: {
     backgroundColor: "#4CAF50",
     paddingVertical: 10,
+    left: '50%',
     borderRadius: 8,
     width: "48%",
     alignItems: "center",
@@ -325,6 +333,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   btnUserDetails: {
+    backgroundColor: "#4D9899",
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#f39c12",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  allotmentBtn: {
     backgroundColor: "#4D9899",
     paddingVertical: 10,
     borderRadius: 8,

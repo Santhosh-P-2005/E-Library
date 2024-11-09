@@ -169,6 +169,7 @@ export default function UserScreen({ navigation }) {
                         Published Year: {item.publishedyear}
                       </Text>
                       <Text style={styles.bookText}>ID: {item.bookId}</Text>
+                      <Text style={styles.bookText}>Status: {item.status}</Text>
                       <Text style={styles.bookText}>
                         Price: {item.price}
                       </Text>
